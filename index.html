@@ -21,6 +21,7 @@ Notes:
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Birthday Puzzle — Crossword Game</title>
   <style>
+    /* ========== KEEPING YOUR ORIGINAL STYLING EXACTLY ========== */
     :root{--accent:#d946ef;--bg:#0f172a;--card:#0b1220;--muted:#94a3b8;color-scheme:dark}
     html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial}
     body{background:linear-gradient(180deg,#07102a 0%, #0b1220 100%);color:#e6eef8;display:flex;align-items:flex-start;justify-content:center;padding:28px}
@@ -28,12 +29,14 @@ Notes:
     header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px}
     h1{font-size:20px;margin:0}
     .grid-and-clues{display:flex;gap:18px;flex-wrap:wrap}
-    /* crossword grid */
-    .grid{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);gap:4px;padding:8px;background:rgba(255,255,255,0.02);border-radius:8px;max-width:100%}
-    .cell{width:38px;height:38px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.02);position:relative}
-    .cell input{width:100%;height:100%;border:0;background:transparent;color:inherit;text-align:center;font-weight:600;font-size:16px}
+    /* crossword grid: fixed to prevent overlap with clues */
+    .grid{display:grid;gap:3px;padding:8px;background:rgba(255,255,255,0.02);border-radius:8px;max-width:100%;width:auto;min-width:300px}
+    .cell{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.02);position:relative;box-sizing:border-box}
+    .cell input{width:100%;height:100%;border:0;background:transparent;color:inherit;text-align:center;font-weight:700;font-size:16px;letter-spacing:1px;text-transform:uppercase;caret-color:var(--accent)}
     .cell.block{background:#071025}
-    .cell.num{font-size:9px;position:absolute;left:4px;top:2px;color:var(--muted)}
+    .cell .num{font-size:9px;position:absolute;left:3px;top:2px;color:var(--muted);font-weight:700}
+    .cell.correct input{color:#10b981}
+    .cell.incorrect input{color:#ef4444}
     .clues{flex:1;min-width:260px}
     .clue-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .clue-box{background:rgba(255,255,255,0.02);padding:12px;border-radius:8px}
@@ -52,9 +55,10 @@ Notes:
     .scramble-word{font-size:28px;letter-spacing:6px;font-weight:800}
     .success{background:linear-gradient(90deg,#10b981,#06b6d4);padding:8px;border-radius:8px;color:#021018;display:inline-block;margin-top:8px}
     .final-card{padding:18px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent)}
+    /* Responsive (kept and tuned) */
     @media(max-width:920px){
-      .grid-and-clues{flex-direction:column}
-      .grid{justify-self:center;margin:auto}
+      .grid-and-clues{flex-direction:column;gap:12px}
+      .grid{width:95vw}
       .clue-list{grid-template-columns:1fr}
       .scramble-word{font-size:22px;letter-spacing:4px}
     }
@@ -62,10 +66,17 @@ Notes:
       body{padding:14px}
       h1{font-size:16px}
       .btn{padding:8px 12px;font-size:14px}
-      .cell{width:32px;height:32px}
-      .cell input{font-size:14px}
+      .cell{width:24px;height:24px}
+      .cell input{font-size:12px}
+      .cell .num{font-size:8px;left:2px;top:1px}
       .scramble-word{font-size:20px}
+      .grid{width:92vw;gap:2px}
     }
+
+    /* small layout editor styling (unobtrusive) */
+    .layout-toggle{font-size:12px;color:var(--muted);cursor:pointer;margin-top:6px}
+    .layout-panel{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;margin-top:10px}
+    .small{font-size:13px;color:var(--muted)}
   </style>
 </head>
 <body>
@@ -73,8 +84,9 @@ Notes:
     <header>
       <div>
         <h1>Can you solve the puzzle and unlock the details?</h1>
-        <div class="top-note">Crossword → Puzzle → Final reveal (automated)</div>
+        <div class="top-note">Crossword → Puzzle → Final reveal</div>
       </div>
+      <div class="muted"></div>
     </header>
 
     <!-- Stage 1: Crossword -->
@@ -82,9 +94,24 @@ Notes:
       <div class="grid-and-clues">
         <div>
           <div class="grid" id="crossword-grid" aria-hidden="false"></div>
+
           <div class="center" style="margin-top:8px">
             <button id="check-crossword" class="btn">Check & Continue</button>
             <div id="cw-feedback" class="muted" style="margin-top:8px"></div>
+
+            <!-- unobtrusive toggle to open editor (only use if placements must be adjusted) -->
+            <div class="layout-toggle" id="layout-toggle"></div>
+
+            <div class="layout-panel hidden" id="layout-panel" aria-hidden="true">
+              <div class="small">Tip: row/col are 0-indexed. Pick a clue, set row/col and dir, press <strong>Apply</strong> to place it exactly like your screenshot. Conflicts will be highlighted.</div>
+              <div id="placements-controls" style="margin-top:8px"></div>
+              <div style="margin-top:8px">
+                <button id="apply-layout" class="btn">Apply</button>
+                <button id="reset-layout" class="btn" style="background:linear-gradient(90deg,#f97316,#ef4444);margin-left:8px">Reset</button>
+              </div>
+              <div id="layout-msg" class="muted" style="margin-top:8px"></div>
+            </div>
+
           </div>
         </div>
 
@@ -93,37 +120,31 @@ Notes:
             <div class="clue-box">
               <strong>Across</strong>
               <div style="margin-top:8px">
-                <label>1. Age she’s celebrating this year (Answer: FORTY)</label>
-                <input id="a1" class="clue-input" placeholder="Type answer (e.g. FORTY)">
-                <label style="margin-top:8px">2. Her favorite weekend escape (BEACH)</label>
-                <input id="a2" class="clue-input" placeholder="BEACH">
-                <label style="margin-top:8px">3. A drink she’ll definitely raise a toast with (WINE)</label>
-                <input id="a3" class="clue-input" placeholder="WINE">
-                <label style="margin-top:8px">4. The month of the celebration (OCTOBER)</label>
-                <input id="a4" class="clue-input" placeholder="OCTOBER">
+                <!-- EXACT text/numbering from screenshot as requested -->
+                <label>2. Party location city (NAIROBI)</label>
+                <label>6. The month of the celebration (OCTOBER)</label>
+                <label>7. Her personality (CHILL)</label>
+                <label>8. The day of the party (SATURDAY)</label>
               </div>
             </div>
 
             <div class="clue-box">
               <strong>Down</strong>
               <div style="margin-top:8px">
-                <label>2. She’s always ready for a new ___ (ADVENTURE)</label>
-                <input id="d2" class="clue-input" placeholder="ADVENTURE">
-                <label style="margin-top:8px">4. Party location city (NAIROBI)</label>
-                <input id="d4" class="clue-input" placeholder="NAIROBI">
-                <label style="margin-top:8px">6. Her personality: relaxed and ___ (CHILL)</label>
-                <input id="d6" class="clue-input" placeholder="CHILL">
-                <label style="margin-top:8px">8. The day of the party (SATURDAY)</label>
-                <input id="d8" class="clue-input" placeholder="SATURDAY">
+                <label>1. Age she's celebrating this year (FORTY)</label>
+                <label>3. She's always ready for a new (ADVENTURE)</label>
+                <label>4. Her favorite weekend escape (BEACH)</label>
+                <label>5. A drink she'll definitely raise a toast with (WINE)</label>
               </div>
             </div>
           </div>
-          <div style="margin-top:12px" class="muted">Tip: Fill the answers on the right then press <strong>Check & Continue</strong>. The secret phrase across the middle row will appear when correct.</div>
+
+          <div style="margin-top:12px" class="muted">Tip: Fill in the grid. Correct letters turn green; incorrect letters turn red.</div>
         </div>
       </div>
     </section>
 
-    <!-- Stage 2: Puzzle 2 (word scramble) -->
+    <!-- Stage 2: Puzzle 2 -->
     <section id="stage-puzzle2" class="stage hidden">
       <div class="puzzle2-wrap">
         <div class="scramble-card">
@@ -150,13 +171,13 @@ Notes:
             </div>
           </div>
         </div>
-
+      </div>
     </section>
 
     <!-- Stage 3: Final Reveal -->
     <section id="stage-final" class="stage hidden">
       <div class="final-card center">
-        <h2 id="final-head">🎉 You’ve cracked the code! 🎉</h2>
+        <h2 id="final-head">🎉 You've cracked the code! 🎉</h2>
         <p id="final-text" class="muted" style="max-width:640px;margin:8px auto;line-height:1.5"></p>
         <div style="margin-top:10px">
           <button id="restart" class="btn" style="background:linear-gradient(90deg,#f97316,#ef4444);">Play again</button>
@@ -168,7 +189,11 @@ Notes:
   </div>
 
 <script>
-/* --- Configuration: replace these with actual party details --- */
+/* ===========================
+   Crossword data (exact clues/answers you provided)
+   Auto-check live while typing; unobtrusive editor for exact placements.
+   =========================== */
+
 const finalRevealData = {
   herName: "[Her Name]",
   venue: "[Location]",
@@ -176,92 +201,312 @@ const finalRevealData = {
   startTime: "[Start Time]"
 };
 
-/* --- Crossword placement logic --- */
-const GRID_SIZE = 8;
-const layout = [
-  [1,1,1,1,1,1,1,1],
-  [1,1,1,0,1,1,1,1],
-  [1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,0,1],
-  [1,1,1,1,1,1,1,1]
+/* --------- Grid map matching your screenshot exactly
+   map: rows x cols (ROWS = 9, COLS = 11). null = blocked, {} = open
+*/
+const COLS = 14;
+const ROWS = 9;
+const map = [
+  [ null, null, {}, null, {}, {}, {}, {}, {}, {}, {}, null, null, null ],    // Row 0: F O R T Y across top, plus other intersections
+  [ null, null, {}, null, null, {}, null, null, null, {}, null, null, null, null ], // Row 1: selective blocks
+  [ null, null, {}, null, null, {}, null, null, null, {}, null, {}, null, null  ],    // Row 2: OCTOBER row with blocks on sides  
+  [ {}, {}, {}, {}, {}, {}, {}, null, null, {}, {}, {}, {}, {} ],  // Row 3: blocks around intersections
+  [ null, null, {}, null, null, {}, null, null, null, {}, null, {}, null, null ],      // Row 4: CHILL row
+  [ null, null, null, null, null, {}, null, null, null, null, null, {}, null, null ], // Row 5: blocks
+  [ null, null, {}, {}, {}, {}, {}, {}, {}, {}, null, null, null, null ],          // Row 6: SATURDAY row
+  [ null, null, null, null, null, {}, null, null, null, null, null, null, null, null ], // Row 7: blocks with ADVENTURE continuing
+  [ null, null, null, null, null, {}, null, null, null, null, null, null, null, null ]  // Row 8: final blocks with ADVENTURE end
 ];
-const HIDDEN_PHRASE = "JOINPARTY";
-const ANSWERS = {
-  a1: "FORTY",
-  a2: "BEACH",
-  a3: "WINE",
-  a4: "OCTOBER",
-  d2: "ADVENTURE",
-  d4: "NAIROBI",
-  d6: "CHILL",
-  d8: "SATURDAY"
-};
+/* --------- Words (answers exactly as you gave them)
+   We do not hard-guess coordinates now; we provide default placements (best attempt),
+   but you can exactly place each clue start via the small editor if any cell is off.
+   Numbering and clue text matches your screenshot request:
+   Across: 2 NAIROBI, 6 OCTOBER, 7 CHILL, 8 SATURDAY
+   Down: 1 FORTY, 3 ADVENTURE, 4 BEACH, 5 WINE
+*/
+const defaultPlacements = [
+  { num: 1, dir: 'down',  word: 'FORTY',     row: 0, col: 2 },  // Down 1
+  { num: 2, dir: 'across',word: 'NAIROBI',   row: 0, col: 4 },  // Across 2
+  { num: 3, dir: 'down',  word: 'ADVENTURE', row: 0, col: 5 },  // Down 3
+  { num: 4, dir: 'down',  word: 'BEACH',     row: 0, col: 9 },  // Down 4
+  { num: 5, dir: 'down',  word: 'WINE',      row: 2, col:11 },  // Down 5
+  { num: 6, dir: 'across',word: 'OCTOBER',   row: 3, col: 0 },  // Across 6
+  { num: 7, dir: 'across',word: 'CHILL',     row: 3, col: 9 },  // Across 7
+  { num: 8, dir: 'across',word: 'SATURDAY',  row: 6, col: 2 }   // Across 8
+];
 
-const gridEl = document.getElementById('crossword-grid');
-let cells = [];
-for(let r=0;r<GRID_SIZE;r++){
-  for(let c=0;c<GRID_SIZE;c++){
-    const div = document.createElement('div');
-    div.className = 'cell';
-    if(layout[r][c]===0) { div.classList.add('block'); }
-    else {
-      const inp = document.createElement('input');
-      inp.maxLength = 1;
-      inp.addEventListener('input', e=>{ e.target.value = e.target.value.toUpperCase().slice(0,1);});
-      div.appendChild(inp);
-    }
-    gridEl.appendChild(div);
-    cells.push(div);
+let placements = JSON.parse(JSON.stringify(defaultPlacements)); // working copy
+
+/* --------- Build structure: cell objects */
+const cells = []; // flattened: index = r*COLS + c
+for (let r=0; r<ROWS; r++){
+  for (let c=0; c<COLS; c++){
+    const open = !!(map[r] && map[r][c] !== null);
+    cells.push({ r, c, open, dom:null, input:null, expected:null });
   }
 }
 
-function getClueValue(id){ return document.getElementById(id).value.trim().toUpperCase(); }
-function checkAllClues(){
-  for(const k in ANSWERS){
-    if(getClueValue(k)!==ANSWERS[k]) return false;
+/* --------- Helper: index */
+function idx(r,c){ return r*COLS + c; }
+
+/* --------- Render grid DOM */
+const gridEl = document.getElementById('crossword-grid');
+gridEl.style.gridTemplateColumns = `repeat(${COLS},1fr)`;
+gridEl.style.gridTemplateRows = `repeat(${ROWS},1fr)`;
+
+function clearGridDom(){
+  gridEl.innerHTML = '';
+  for (const cell of cells){ cell.dom = null; cell.input = null; cell.expected = null; cell.open = !!(map[cell.r][cell.c] !== null); }
+}
+
+/* Create DOM cells, blocked or input */
+function renderGrid() {
+  clearGridDom();
+  for (let r=0;r<ROWS;r++){
+    for (let c=0;c<COLS;c++){
+      const index = idx(r,c);
+      const cell = cells[index];
+      const div = document.createElement('div');
+      div.className = 'cell';
+      if (!cell.open) {
+        div.classList.add('block');
+      } else {
+        const input = document.createElement('input');
+        input.maxLength = 1;
+        input.autocomplete='off';
+        input.spellcheck=false;
+        input.addEventListener('input', (ev)=>{
+          input.value = input.value.toUpperCase().slice(0,1);
+          updateCellState(r,c);
+        });
+        input.addEventListener('keydown', (ev)=>{
+          const k = ev.key;
+          if (k==='ArrowRight'){ focusNext(r,c,0,1); ev.preventDefault(); }
+          if (k==='ArrowLeft'){ focusNext(r,c,0,-1); ev.preventDefault(); }
+          if (k==='ArrowDown'){ focusNext(r,c,1,0); ev.preventDefault(); }
+          if (k==='ArrowUp'){ focusNext(r,c,-1,0); ev.preventDefault(); }
+          if (k==='Backspace' && input.value===''){ focusNext(r,c,0,-1); }
+        });
+        div.appendChild(input);
+        cell.input = input;
+      }
+      gridEl.appendChild(div);
+      cell.dom = div;
+    }
+  }
+  // After creating, apply placements
+  applyPlacementsToGrid(placements, { showWarnings:false });
+}
+
+/* Focus helper */
+function focusNext(r,c,dr,dc){
+  let nr=r+dr, nc=c+dc;
+  for (let i=0;i<50;i++){
+    if (nr<0||nr>=ROWS||nc<0||nc>=COLS) return;
+    const cell = cells[idx(nr,nc)];
+    if (cell.open && cell.input){ cell.input.focus(); return; }
+    nr+=dr; nc+=dc;
+  }
+}
+
+/* --------- Place words onto grid (set expected letters) and add numbering */
+function resetExpected(){
+  for (const cell of cells){ cell.expected = null; if (cell.dom) cell.dom.classList.remove('correct','incorrect'); }
+  // remove any existing numbers
+  for (const cell of cells){
+    if (cell.dom){
+      const existing = cell.dom.querySelector('.num');
+      if (existing) existing.remove();
+    }
+  }
+}
+
+/* Validate a single placement fits open cells and doesn't go out-of-bounds */
+function validatePlacement(p){
+  const w = p.word.toUpperCase();
+  for (let i=0;i<w.length;i++){
+    const r = p.row + (p.dir==='down'?i:0);
+    const c = p.col + (p.dir==='across'?i:0);
+    if (r<0||r>=ROWS||c<0||c>=COLS) return { ok:false, reason:'out_of_bounds', at:[r,c] };
+    const cell = cells[idx(r,c)];
+    if (!cell.open) return { ok:false, reason:'blocked_cell', at:[r,c] };
+  }
+  return { ok:true };
+}
+
+/* Apply placements (array) to grid: set expected letters; return conflicts */
+function applyPlacementsToGrid(list, opts={showWarnings:true}){
+  resetExpected();
+  const conflicts = [];
+  for (const p of list){
+    const w = p.word.toUpperCase();
+    for (let i=0;i<w.length;i++){
+      const r = p.row + (p.dir==='down'?i:0);
+      const c = p.col + (p.dir==='across'?i:0);
+      const key = `${r},${c}`;
+      const cell = cells[idx(r,c)];
+      if (!cell){
+        conflicts.push({p,reason:'out_of_bounds',pos:[r,c]});
+        continue;
+      }
+      if (!cell.open){
+        conflicts.push({p,reason:'blocked_cell',pos:[r,c]});
+        continue;
+      }
+      if (cell.expected && cell.expected !== w[i]){
+        // conflicting different letter on same cell
+        conflicts.push({p,reason:'letter_conflict',pos:[r,c],existing:cell.expected, newLetter:w[i]});
+        continue;
+      }
+      cell.expected = w[i];
+    }
+    // attach numbering to start cell (DOM)
+    const startCell = cells[idx(p.row,p.col)];
+    if (startCell && startCell.dom){
+      const numEl = document.createElement('div');
+      numEl.className = 'num';
+      numEl.textContent = p.num;
+      startCell.dom.appendChild(numEl);
+    }
+  }
+  // update live states for any prefilled inputs
+  for (const cell of cells){
+    if (cell.open && cell.input) updateCellState(cell.r, cell.c);
+  }
+  if (conflicts.length && opts.showWarnings){
+    const layoutMsg = document.getElementById('layout-msg');
+    layoutMsg.textContent = 'Placement conflicts: ' + conflicts.map(c=>`${c.reason}@${c.pos}`).join('; ');
+  } else {
+    const layoutMsg = document.getElementById('layout-msg');
+    if (layoutMsg) layoutMsg.textContent = '';
+  }
+  return conflicts;
+}
+
+/* Update color state for a single cell (correct/incorrect) */
+function updateCellState(r,c){
+  const index = idx(r,c);
+  const cell = cells[index];
+  if (!cell || !cell.input) return;
+  const val = (cell.input.value || '').toUpperCase();
+  cell.dom.classList.remove('correct','incorrect');
+  if (!val) return;
+  if (cell.expected){
+    if (val === cell.expected) cell.dom.classList.add('correct');
+    else cell.dom.classList.add('incorrect');
+  } else {
+    // If this open cell has no expected letter (not part of placed words), leave neutral
+    cell.dom.classList.remove('correct','incorrect');
+  }
+}
+
+/* Check full solution for all placed words */
+function checkAllWords(list){
+  for (const p of list){
+    const w = p.word.toUpperCase();
+    for (let i=0;i<w.length;i++){
+      const r = p.row + (p.dir==='down'?i:0);
+      const c = p.col + (p.dir==='across'?i:0);
+      const cell = cells[idx(r,c)];
+      const val = (cell.input && cell.input.value) ? cell.input.value.toUpperCase() : '';
+      if (val !== w[i]) return false;
+    }
   }
   return true;
 }
-function fillGridWithDemo(){
-  const filled = Array(GRID_SIZE*GRID_SIZE).fill('');
-  const words = [
-    {r:0,start:0,w:'FORTY'},
-    {r:1,start:0,w:'BEACH'},
-    {r:2,start:2,w:'WINE'},
-    {r:3,start:0,w:'JOINPARTY'},
-    {r:4,start:0,w:'OCTOBER'},
-    {r:5,start:0,w:'NAIROBI'},
-    {r:6,start:0,w:'CHILL'},
-    {r:7,start:0,w:'SATURDAY'}
-  ];
-  for(const row of words){
-    for(let i=0;i<row.w.length && (row.start+i)<GRID_SIZE;i++){
-      filled[row.r*GRID_SIZE+row.start+i] = row.w[i];
-    }
-  }
-  for(let i=0;i<cells.length;i++){
-    if(layout[Math.floor(i/GRID_SIZE)][i%GRID_SIZE]===0) continue;
-    const inp = cells[i].querySelector('input');
-    inp.value = filled[i] || '';
-  }
-}
 
-document.getElementById('check-crossword').addEventListener('click', ()=>{
-  const fb = document.getElementById('cw-feedback');
-  if(!checkAllClues()){ fb.textContent = 'Not all clues are correct yet — double-check your answers.'; return; }
-  fb.textContent = 'Nice! The middle row reads the secret phrase. Redirecting to Puzzle #2...';
-  fillGridWithDemo();
-  setTimeout(()=>goToStage('puzzle2'),1400);
+/* ---------- Editor UI logic (unobtrusive) ---------- */
+const layoutToggle = document.getElementById('layout-toggle');
+const layoutPanel = document.getElementById('layout-panel');
+layoutToggle.addEventListener('click', ()=> {
+  layoutPanel.classList.toggle('hidden');
+  layoutPanel.setAttribute('aria-hidden', layoutPanel.classList.contains('hidden') ? 'true' : 'false');
 });
 
-function goToStage(stage){
-  document.querySelectorAll('.stage').forEach(s=>s.classList.add('hidden'));
-  document.getElementById('stage-'+stage).classList.remove('hidden');
+/* Build controls for each placement so user can tweak row/col/dir */
+function buildPlacementControls(){
+  const cont = document.getElementById('placements-controls');
+  cont.innerHTML = '';
+  placements.forEach((p, i) => {
+    const box = document.createElement('div');
+    box.style.marginBottom='6px';
+    box.style.display='flex';
+    box.style.gap='6px';
+    box.style.alignItems='center';
+
+    const label = document.createElement('div');
+    label.textContent = `${p.num} (${p.word})`;
+    label.style.minWidth='110px';
+    box.appendChild(label);
+
+    const rowIn = document.createElement('input');
+    rowIn.type='number'; rowIn.value = p.row; rowIn.style.width='60px';
+    const colIn = document.createElement('input');
+    colIn.type='number'; colIn.value = p.col; colIn.style.width='60px';
+    const dirSel = document.createElement('select');
+    const optA = document.createElement('option'); optA.value='across'; optA.text='across';
+    const optD = document.createElement('option'); optD.value='down'; optD.text='down';
+    dirSel.appendChild(optA); dirSel.appendChild(optD);
+    dirSel.value = p.dir;
+
+    box.appendChild(document.createTextNode('row:'));
+    box.appendChild(rowIn);
+    box.appendChild(document.createTextNode('col:'));
+    box.appendChild(colIn);
+    box.appendChild(dirSel);
+
+    // on change, update placements array (live in memory)
+    rowIn.addEventListener('change', ()=> { placements[i].row = parseInt(rowIn.value,10); });
+    colIn.addEventListener('change', ()=> { placements[i].col = parseInt(colIn.value,10); });
+    dirSel.addEventListener('change', ()=> { placements[i].dir = dirSel.value; });
+
+    cont.appendChild(box);
+  });
 }
 
+/* Apply button: validate & render placements */
+document.getElementById('apply-layout').addEventListener('click', ()=>{
+  clearGridDom();
+  renderGrid(); // create DOM fresh
+  const conflicts = applyPlacementsToGrid(placements, { showWarnings:true });
+  if (conflicts.length === 0){
+    document.getElementById('layout-msg').textContent = 'Applied placements — no conflicts.';
+  } else {
+    document.getElementById('layout-msg').textContent = 'Conflicts found — adjust highlighted in message.';
+  }
+});
+
+/* Reset to defaults */
+document.getElementById('reset-layout').addEventListener('click', ()=>{
+  placements = JSON.parse(JSON.stringify(defaultPlacements));
+  buildPlacementControls();
+  clearGridDom();
+  renderGrid();
+  applyPlacementsToGrid(placements, { showWarnings:false });
+  document.getElementById('layout-msg').textContent = 'Reset to default placements.';
+});
+
+/* ---------- Initial render ---------- */
+renderGrid();
+buildPlacementControls();
+applyPlacementsToGrid(placements, { showWarnings:false });
+
+/* ---------- Check button (when user presses Check & Continue) ---------- */
+document.getElementById('check-crossword').addEventListener('click', ()=>{
+  const fb = document.getElementById('cw-feedback');
+  const allGood = checkAllWords(placements);
+  if (allGood){
+    fb.textContent = 'Perfect — moving to Puzzle #2...';
+    setTimeout(()=> {
+      document.getElementById('stage-crossword').classList.add('hidden');
+      document.getElementById('stage-puzzle2').classList.remove('hidden');
+    }, 800);
+  } else {
+    fb.textContent = 'Some letters are incorrect — check the red cells.';
+  }
+});
+
+/* ---------- Puzzle 2 logic (unchanged) ---------- */
 const scrambles = [
   {word: 'CONFETTI', scramble: shuffle('CONFETTI')},
   {word: 'CAKE', scramble: shuffle('CAKE')}
@@ -283,13 +528,22 @@ document.getElementById('check-puzzle2').addEventListener('click', ()=>{
   if(ok){ document.getElementById('p2-feedback').textContent='All solved — revealing final details...'; setTimeout(()=>goToStage('final'),900); }
 });
 
+function goToStage(stage){
+  document.querySelectorAll('.stage').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('stage-'+stage).classList.remove('hidden');
+}
+
+/* ---------- Final reveal ---------- */
 function populateFinal(){
   const el = document.getElementById('final-text');
-  el.innerHTML = `🎉 We celebrate ${escapeHtml(finalRevealData.herName)}’s 40th!<br><br>📍 Venue: ${escapeHtml(finalRevealData.venue)}<br>📅 Date: ${escapeHtml(finalRevealData.fullDate)}<br>🕘 Time: ${escapeHtml(finalRevealData.startTime)}<br><br>Come ready for fun, laughter, and adventure as we celebrate 40 fabulous years!`;
+  el.innerHTML = `🎉 We celebrate ${escapeHtml(finalRevealData.herName)}'s 40th!<br><br>📍 Venue: ${escapeHtml(finalRevealData.venue)}<br>📅 Date: ${escapeHtml(finalRevealData.fullDate)}<br>🕘 Time: ${escapeHtml(finalRevealData.startTime)}<br><br>Come ready for fun, laughter, and adventure as we celebrate 40 fabulous years!`;
 }
 function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
 document.getElementById('restart').addEventListener('click', ()=>{
-  ['a1','a2','a3','a4','d2','d4','d6','d8','scr1-input','scr2-input'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+  // clear crossword inputs
+  document.querySelectorAll('.cell input').forEach(i=>{ if (i) i.value=''; if (i && i.parentElement) { i.parentElement.classList.remove('correct','incorrect'); }});
+  // reset scrambles
   scrambles[0].scramble = shuffle(scrambles[0].word);
   scrambles[1].scramble = shuffle(scrambles[1].word);
   document.getElementById('scr1').textContent = scrambles[0].scramble.split('').join(' ');
@@ -297,6 +551,7 @@ document.getElementById('restart').addEventListener('click', ()=>{
   goToStage('crossword');
 });
 populateFinal();
+
 </script>
 </body>
 </html>
