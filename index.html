@@ -31,17 +31,17 @@
     /* === FIXED + RESPONSIVE GRID === */
     .grid {
       display:grid;
-      grid-template-columns: repeat(15, 32px); /* fixed width per column */
+      grid-template-columns: repeat(15, 32px); 
       gap:3px;
       padding:8px;
       background:rgba(255,255,255,0.02);
       border-radius:8px;
-      margin:0 auto;              /* center the grid */
-      width:max-content;           /* shrink to content */
+      margin:0 auto;
+      width:max-content;
     }
 
     .cell {
-      width:32px;height:32px;      /* match desktop column size */
+      width:32px;height:32px;
       border-radius:6px;
       display:flex;align-items:center;justify-content:center;
       background:rgba(255,255,255,0.02);
@@ -64,7 +64,8 @@
     .clues {flex:1;min-width:260px}
     .clue-list {display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .clue-box {background:rgba(255,255,255,0.02);padding:12px;border-radius:8px}
-    label {font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+    label {font-size:13px;display:block;margin-bottom:6px}
+    .clue-hint {font-size:12px;color:var(--muted);font-style:italic;margin-left:10px;display:block;margin-bottom:10px}
     .btn {display:inline-block;padding:10px 14px;border-radius:8px;background:linear-gradient(90deg,var(--accent),#7c3aed);color:white;border:0;font-weight:700;cursor:pointer}
     .muted {color:var(--muted);font-size:13px}
     .center {text-align:center}
@@ -83,8 +84,6 @@
       body {padding:14px}
       h1 {font-size:16px}
       .btn {padding:8px 12px;font-size:14px}
-
-      /* smaller cells on mobile */
       .grid {
         grid-template-columns: repeat(15, 24px);
         gap:2px;
@@ -94,8 +93,6 @@
       .cell .num {font-size:8px;left:2px;top:1px}
     }
   </style>
-
-
 </head>
 <body>
 <div class="container">
@@ -111,7 +108,7 @@
     <div class="grid-and-clues">
       <div>
         <div class="grid" id="crossword-grid"></div>
-        <div id="hint-box" class="muted center" style="margin-top:8px;min-height:20px"></div>
+        <!-- removed hint-box -->
         <div class="center" style="margin-top:8px">
           <button id="check-crossword" class="btn">Check & Continue</button>
           <div id="cw-feedback" class="muted" style="margin-top:8px"></div>
@@ -124,20 +121,38 @@
             <strong>Across</strong>
             <div style="margin-top:8px">
               <label>4. What did she study for her undergrad?</label>
+              <span class="clue-hint">What professional field involves constitutions, rights, and courtrooms?</span>
+
               <label>6. In which hospital was Nyam born?</label>
+              <span class="clue-hint">Named after a wealthy industrialist and philanthropist.</span>
+
               <label>7. What is her favourite bible character?</label>
+              <span class="clue-hint">This prophet survived a night with lions.</span>
+
               <label>9. How many siblings does she have?</label>
+              <span class="clue-hint">Not an only child, not a big family — just a pair.</span>
+
               <label>10. How many African countries has she been to?</label>
+              <span class="clue-hint">One short of a dozen.</span>
             </div>
           </div>
           <div class="clue-box">
             <strong>Down</strong>
             <div style="margin-top:8px">
               <label>1. What was her favourite subject in school?</label>
+              <span class="clue-hint">Numbers, equations, and logic — her school favorite.</span>
+
               <label>2. What hobby has she kept since childhood?</label>
+              <span class="clue-hint">A lifelong companion that takes her through countless worlds.</span>
+
               <label>3. What is Nyam's favourite movie?</label>
+              <span class="clue-hint">A Ridley Scott epic of gladiators and vengeance.</span>
+
               <label>5. What topic can she relay lots of random facts about?</label>
+              <span class="clue-hint">Animals and nature.</span>
+
               <label>8. What quirky trait does Nyam have?</label>
+              <span class="clue-hint">Known for her cheerful spirit and witty humor.</span>
             </div>
           </div>
         </div>
@@ -161,16 +176,16 @@
 
 <script>
   const placements = [
-    { num:1, dir:'down', word:'MATHS', row:0, col:10, clue:'1. Numbers, equations, and logic — her school favorite.' },
-    { num:2, dir:'down', word:'READING', row:1, col:6, clue:'2. A lifelong companion, this hobby takes her through countless worlds without leaving the room.' },
-    { num:3, dir:'down', word:'GLADIATOR', row:2, col:2, clue:"3. A Ridley Scott epic of gladiators, emperors, and vengeance." },
-    { num:4, dir:'across', word:'LAW', row:3, col:2, clue:'4. What professional field involves constitutions, rights, and courtrooms?' },
-    { num:5, dir:'down', word:'WILDLIFE', row:3, col:4, clue:'5. She can fill a conversation with random trivia about animals and nature.' },
-    { num:6, dir:'across', word:'AGAKHAN', row:3, col:6, clue:'6. Nyam first opened her eyes in a hospital named after a wealthy industrialist and philanthropist.' },
-    { num:7, dir:'across', word:'DANIEL', row:6, col:4, clue:'7. This prophet survived a night with lions and is one of her favorite biblical figures.' },
-    { num:8, dir:'down', word:'FUNNY', row:8, col:9, clue:'8. People know her for her cheerful spirit and witty sense of humor.' },
-    { num:9, dir:'across', word:'TWO', row:9, col:0, clue:'9. Not an only child, not a big family — just a pair to share life with.' },
-    { num:10, dir:'across', word:'ELEVEN', row:10, col:4, clue:'10. She’s been to more than a handful of African countries — in fact, one short of a dozen.' }
+    { num:1, dir:'down', word:'MATHS', row:0, col:10 },
+    { num:2, dir:'down', word:'READING', row:1, col:6 },
+    { num:3, dir:'down', word:'GLADIATOR', row:2, col:2 },
+    { num:4, dir:'across', word:'LAW', row:3, col:2 },
+    { num:5, dir:'down', word:'WILDLIFE', row:3, col:4 },
+    { num:6, dir:'across', word:'AGAKHAN', row:3, col:6 },
+    { num:7, dir:'across', word:'DANIEL', row:6, col:4 },
+    { num:8, dir:'down', word:'FUNNY', row:8, col:9 },
+    { num:9, dir:'across', word:'TWO', row:9, col:0 },
+    { num:10, dir:'across', word:'ELEVEN', row:10, col:4 }
   ];
 
   const ROWS=13, COLS=13;
@@ -201,8 +216,6 @@
           const inp=document.createElement("input");
           inp.maxLength=1;
           inp.addEventListener("input",()=>{inp.value=inp.value.toUpperCase();updateCell(cell,p.word[i]);});
-          inp.addEventListener("focus",()=>{document.getElementById("hint-box").textContent=p.clue;});
-          inp.addEventListener("blur",()=>{document.getElementById("hint-box").textContent="";});
           cell.dom.appendChild(inp);
           cell.input=inp;
         }
